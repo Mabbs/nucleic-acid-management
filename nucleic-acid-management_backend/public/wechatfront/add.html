@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>核酸检测</title>
+    <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+    <script>
+    // VConsole will be exported to `window.VConsole` by default.
+    var vConsole = new window.VConsole();
+    </script>
+    <script>
+        function GetQueryString(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+            var r = window.location.search.substr(1).match(reg); //获取url中"?"符后的字符串并正则匹配
+            var context = "";
+            if (r != null)
+                context = decodeURIComponent(r[2]);
+            reg = null;
+            r = null;
+            return context == null || context == "" || context == "undefined" ? "" : context;
+        }
+        var database = {serial: "", users: []};
+        $.get("/wechat/jssdk/getTicket/?url=" + encodeURIComponent(window.location.href.split('#')[0]), function(data) {
+            wx.config({
+                debug: true,
+                appId: data.data.appId,
+                timestamp: data.data.timestamp,
+                nonceStr: data.data.nonceStr,
+                signature: data.data.signature,
+                jsApiList: [
+                    'scanQRCode'
+                ]
+            });
+        });
+        wx.ready(function () {
+            $('.scanStart').show();
+        });
+
+        function scanKitAction() {
+            wx.scanQRCode({
+                needResult: 1,
+                scanType: ['barCode'],
+                success: function (res) {
+                    var result = res.resultStr.split(','); // 获取扫描结果
+                    database.serial = result[result.length - 1];
+                    $('.scanStart').hide();
+                    $('.userManage').show();
+                    $('#serial').text("当前管码：" + database.serial);
+                },
+                fail: function (res) {
+                    // 扫码失败时的处理代码
+                    alert("扫码失败，请重试！");
+                }
+            });
+        }
+        function userManagerAction() {
+            wx.scanQRCode({
+                needResult: 1,
+                scanType: ['qrCode'],
+                success: function (res) {
+                    var result = res.resultStr; // 获取扫描结果
+                    userinfo = JSON.parse(result);
+                    if (database.users.indexOf(userinfo.id) != -1) {
+                        alert("该用户已添加！");
+                        return;
+                    }
+                    database.users.push(userinfo.id);
+                    $('#user').append('<a href="javascript:" class="weui-media-box weui-media-box_appmsg"><div class="weui-media-box__bd"><strong class="weui-media-box__title">' + userinfo.name + '</strong><p class="weui-media-box__desc">' + userinfo.uniqid + '</p></div></a>');
+                },
+                fail: function (res) {
+                    // 扫码失败时的处理代码
+                    alert("扫码失败，请重试！");
+                }
+            });
+        }
+        $.post('/wechat/user/login', {openid: GetQueryString("openid")}, function (data) {
+                console.log(data);
+                if (data.code != 200 || data.data.gid < 2) {
+                    alert('身份验证失败');
+                    document.addEventListener('WeixinJSBridgeReady', function(){ WeixinJSBridge.call('closeWindow'); }, false);
+                }
+        });
+        function submitAction() {
+            console.log(database);
+            $.post('/wechat/skit/add', database, function (data) {
+                if (data.code == 200) {
+                    alert('添加成功');
+                    location.reload();
+                } else {
+                    alert(data.msg);
+                }
+            });
+        }
+        
+    </script>
+    <link rel="stylesheet" href="/static/style/weui.min.css" />
+</head>
+<body style="background-color: var(--weui-BG-2);">
+    <div class="weui-panel page">
+        <div class="page__bd">
+            <div style="margin: 10px; display: none;" class="scanStart">
+                <a href="javascript:" role="button" class="weui-btn weui-btn_primary" onclick="scanKitAction()">扫码添加采集管</a>
+            </div>
+            <div class="userManage" style="display: none">
+                <div class="weui-panel weui-panel_access">
+                    <div class="weui-panel__hd" id="serial"></div>
+                    <div class="weui-panel__bd" id="user"></div>
+                    <div style="margin: 10px;">
+                        <a href="javascript:" role="button" class="weui-btn weui-btn_default" onclick="userManagerAction()">扫码添加用户 ➕</a>
+                    </div>
+                    <div style="margin: 10px;">
+                        <a href="javascript:" role="button" class="weui-btn weui-btn_primary" onclick="submitAction()">提交</a>
+                    </div>
+                </div>
+            </div>
+            <div class="weui-form__extra-area">
+                <div class="weui-footer">
+                  <p class="weui-footer__text">Made by Mayx.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

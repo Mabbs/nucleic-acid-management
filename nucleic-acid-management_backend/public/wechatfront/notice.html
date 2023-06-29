@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>查看公告</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        $.get('/wechat/notice/read', function (data) {
+            console.log(data);
+            if (data.code == 200) {
+                if (data.data.length == 0) {
+                    alert('暂无公告');
+                    document.addEventListener('WeixinJSBridgeReady', function(){ WeixinJSBridge.call('closeWindow'); }, false);
+                }
+                var html = '';
+                for (var i = 0; i < data.data.length; i++) {
+                    html += '<a href="noticedetail.html?id=' + data.data[i].id +'" class="weui-media-box weui-media-box_appmsg"><div class="weui-media-box__hd"><img class="weui-media-box__thumb" src="' + data.data[i].media_url + '" alt=""></div><div class="weui-media-box__bd"><strong class="weui-media-box__title">' + data.data[i].title + '</strong><p class="weui-media-box__desc">' + data.data[i].create_time + '</p></div></a>';
+                }
+                $('#notice').html(html);
+            } else {
+                alert(data.msg);
+            }
+        });
+    </script>
+    <link rel="stylesheet" href="/static/style/weui.min.css" />
+</head>
+<body style="background-color: var(--weui-BG-2);">
+    <div class="weui-panel page">
+        <div class="page__bd">
+            <div class="weui-panel weui-panel_access">
+                <div class="weui-panel__hd">公告</div>
+                <div class="weui-panel__bd" id="notice">
+                </div>
+            </div>
+            <div class="weui-form__extra-area">
+                <div class="weui-footer">
+                  <p class="weui-footer__text">Made by Mayx.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

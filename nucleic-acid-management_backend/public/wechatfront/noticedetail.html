@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        var id = window.location.search.split('=')[1];
+        $.get('/wechat/notice/read?id=' + id, function (data) {
+            console.log(data);
+            if (data.code == 200) {
+                document.title = data.data[0].title;
+                var html = '<h1>' + data.data[0].title + '</h1><p><img height="200px" onerror="this.remove();" src="' + data.data[0].media_url + '" /></p><p>' + data.data[0].content + '</p><p><small>' + data.data[0].create_time + '</small></p>';
+                $('#content').append(html);
+            } else {
+                alert(data.msg);
+            }
+        });
+    </script>
+    <link rel="stylesheet" href="/static/style/weui.min.css" />
+</head>
+<body style="background-color: var(--weui-BG-2);">
+    <div class="weui-panel page">
+        <article id="content" class="weui-article">
+        </article>
+        <div class="weui-form__extra-area">
+            <div class="weui-footer">
+              <p class="weui-footer__text">Made by Mayx.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

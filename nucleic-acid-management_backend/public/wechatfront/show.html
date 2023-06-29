@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>展示二维码</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
+    <script>
+        function utf16to8(str) {
+            var out, i, len, c;
+            out = "";
+            len = str.length;
+            for (i = 0; i < len; i++) {
+                c = str.charCodeAt(i);
+                if ((c >= 0x0001) && (c <= 0x007F)) {
+                    out += str.charAt(i);
+                } else if (c > 0x07FF) {
+                    out += String.fromCharCode(0xE0 | ((c >> 12) & 0x0F));
+                    out += String.fromCharCode(0x80 | ((c >> 6) & 0x3F));
+                    out += String.fromCharCode(0x80 | ((c >> 0) & 0x3F));
+                } else {
+                    out += String.fromCharCode(0xC0 | ((c >> 6) & 0x1F));
+                    out += String.fromCharCode(0x80 | ((c >> 0) & 0x3F));
+                }
+            }
+            return out;
+        }
+        function GetQueryString(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+            var r = window.location.search.substr(1).match(reg); //获取url中"?"符后的字符串并正则匹配
+            var context = "";
+            if (r != null)
+                context = decodeURIComponent(r[2]);
+            reg = null;
+            r = null;
+            return context == null || context == "" || context == "undefined" ? "" : context;
+        }
+        $(function () {
+            $.post('/wechat/user/login', { openid: GetQueryString("openid") }, function (data) {
+                console.log(data);
+                if (data.code == 200) {
+                    $.get('/wechat/skit/status', function (status) {
+                        console.log(status);
+                        if (status.code == 200) {
+                            var color;
+                            if (status.data == 1) {
+                                color = "#00FF00";
+                            } else if (status.data == 2) {
+                                color = "#FF0000";
+                            } else {
+                                color = "#DDDD00";
+                            }
+                            $('.QRCode').qrcode({
+                                render: "canvas", //table方式
+                                width: 200, //宽度
+                                height: 200, //高度
+                                text: utf16to8(JSON.stringify(data.data)), //任意内容
+                                foreground: color
+                            });
+                            $('.userinfo').html(data.data.name);
+                        } else {
+                            alert(data.msg);
+                            document.addEventListener('WeixinJSBridgeReady', function () { WeixinJSBridge.call('closeWindow'); }, false);
+                        }
+                    });
+                } else {
+                    alert(data.msg);
+                    document.addEventListener('WeixinJSBridgeReady', function () { WeixinJSBridge.call('closeWindow'); }, false);
+                }
+            });
+        });
+    </script>
+    <link rel="stylesheet" href="/static/style/weui.min.css" />
+    <style>
+        .QRCode {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            border: 10px solid white;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body style="background-color: var(--weui-BG-2);">
+    <div class="weui-article">
+        <h1>核酸检测</h1>
+        <p>
+        <div class="QRCode"></div>
+        </p>
+        <p class="weui-grid__label">用户：<span class="userinfo"></span></p>
+        <div class="weui-form__extra-area">
+            <div class="weui-footer">
+                <p class="weui-footer__text">Made by Mayx.</p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

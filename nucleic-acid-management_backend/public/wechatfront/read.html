@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>近七次检查结果</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        function GetQueryString(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+            var r = window.location.search.substr(1).match(reg); //获取url中"?"符后的字符串并正则匹配
+            var context = "";
+            if (r != null)
+                context = decodeURIComponent(r[2]);
+            reg = null;
+            r = null;
+            return context == null || context == "" || context == "undefined" ? "" : context;
+        }
+        $(function () {
+            $.post('/wechat/user/login', {openid: GetQueryString("openid")}, function (data) {
+                console.log(data);
+                if (data.code == 200) {
+                    $.get('/wechat/skit/read', function (data) {
+                        console.log(data);
+                        if (data.code == 200) {
+                            if (data.data.length == 0) {
+                                alert('暂无检查记录');
+                                document.addEventListener('WeixinJSBridgeReady', function(){ WeixinJSBridge.call('closeWindow'); }, false);
+                            }
+                            var html = '';
+                            for (var i = 0; i < data.data.length; i++) {
+                                if (data.data[i].status == "1") {
+                                    data.data[i].result = '<span style="color: #00FF00">阴性</span>';
+                                } else if (data.data[i].status == "2") {
+                                    data.data[i].result = '<span style="color: #FF0000">阳性</span>';
+                                } else {
+                                    data.data[i].result = '<span style="color: gray">待测</span>';
+                                }
+                                html += '<tr><td>' + data.data[i].add_time + '</td><td>' + data.data[i].name + '</td><td>' + data.data[i].result + '</td></tr>';
+                            }
+                            $('table').append(html);
+                        } else {
+                            alert(data.msg);
+                        }
+                    });
+                } else {
+                    alert(data.msg);
+                    document.addEventListener('WeixinJSBridgeReady', function(){ WeixinJSBridge.call('closeWindow'); }, false);
+                }
+            });
+        });
+    </script>
+    <link rel="stylesheet" href="/static/style/weui.min.css" />
+</head>
+<body style="background-color: var(--weui-BG-2);">
+    <div class="weui-article">
+        <h1>近七次检查结果</h1>
+        <table align="center">
+            <tr>
+                <th>检查时间</th>
+                <th>检查单位</th>
+                <th>检查结果</th>
+            </tr>
+        </table>
+        <div class="weui-form__extra-area">
+            <div class="weui-footer">
+              <p class="weui-footer__text">Made by Mayx.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

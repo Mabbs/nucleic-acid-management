@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绑定</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        function GetQueryString(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+            var r = window.location.search.substr(1).match(reg); //获取url中"?"符后的字符串并正则匹配
+            var context = "";
+            if (r != null)
+                context = decodeURIComponent(r[2]);
+            reg = null;
+            r = null;
+            return context == null || context == "" || context == "undefined" ? "" : context;
+        }
+        $(function () {
+            $.post('/wechat/user/login', {openid: GetQueryString("openid")}, function (data) {
+                console.log(data);
+                if (data.code == 200) {
+                    alert('当前账号已绑定，点击下方按钮获取菜单');
+                    document.addEventListener('WeixinJSBridgeReady', function(){ WeixinJSBridge.call('closeWindow'); }, false);
+                }
+            });
+            $('#bind').click(function () {
+                var name = $('input[name="name"]').val();
+                var idcard = $('input[name="idcard"]').val();
+                $.post('/wechat/user/register', {name: name, uniqid: idcard, openid: GetQueryString("openid")}, function (data) {
+                    console.log(data);
+                    if (data.code == 200) {
+                        alert('绑定成功，点击下方按钮获取菜单');
+                        document.addEventListener('WeixinJSBridgeReady', function(){ WeixinJSBridge.call('closeWindow'); }, false);
+                    } else {
+                        alert(data.msg);
+                    }
+                });
+            });
+        });
+    </script>
+    <link rel="stylesheet" href="/static/style/weui.min.css" />
+    <style>
+        .page {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="weui-form">
+          <div class="weui-form__text-area">
+            <h2 class="weui-form__title">绑定</h2>
+          </div>
+          <div class="weui-form__control-area">
+            <div class="weui-cells__group weui-cells__group_form">
+              <div class="weui-cells__title">绑定</div>
+              <div class="weui-cells">
+                <label class="weui-cell weui-cell_active">
+                  <div class="weui-cell__hd"><span class="weui-label">姓名</span></div>
+                  <div class="weui-cell__bd">
+                      <input class="weui-input" name="name" placeholder="填写本人姓名"/>
+                  </div>
+                </label>
+                <label class="weui-cell weui-cell_active">
+                  <div class="weui-cell__hd"><span class="weui-label">身份证号</span></div>
+                  <div class="weui-cell__bd">
+                      <input class="weui-input" name="idcard" placeholder="填写本人身份证号"/>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="weui-form__opr-area">
+            <a role="button" id="bind" class="weui-btn weui-btn_primary" href="javascript:" id="showTooltips">确定</a>
+          </div>
+          <div class="weui-form__extra-area">
+            <div class="weui-footer">
+              <p class="weui-footer__text">Made by Mayx.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+</body>
+</html>
